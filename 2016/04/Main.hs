@@ -1,17 +1,20 @@
 import System.Environment
-import Data.Char (isLower)
+import Data.Char (chr, isLower, ord)
 import Data.List (sortBy)
 
 main :: IO ()
 main = do
   [filename] <- getArgs
   content <- readFile filename
+
   let rooms = lines content
-
   let realRooms = filter isRealRoom rooms
-  let result1 = sum $ map getSectorID realRooms
 
+  let result1 = sum $ map getSectorID realRooms
   putStrLn $ "The sum of the sector IDs of the real rooms is: " ++ show result1
+
+  let result2 = getSectorIDOfRoomWithNorthPoleObjects $ decryptRoomNames realRooms
+  putStrLn $ "The sector ID of the room with North Pole objects is: " ++ show result2
 
 
 isRealRoom :: String -> Bool
@@ -68,3 +71,23 @@ sortByFrequency (a1, b1) (a2, b2)
   | b1 < b2 = GT
   | b1 > b2 = LT
   | b1 == b2 = compare a1 a2
+
+
+getSectorIDOfRoomWithNorthPoleObjects :: [(String, Int)] -> Int
+getSectorIDOfRoomWithNorthPoleObjects roomNames = snd $ head $ filter (\x -> (take (length "northpole") (fst x)) == "northpole") roomNames
+
+
+decryptRoomNames :: [String] -> [(String, Int)]
+decryptRoomNames = map (\room -> (decryptRoomName (getEncryptedName room) (getSectorID room), getSectorID room))
+
+
+decryptRoomName :: String -> Int -> String
+decryptRoomName encryptedRoomName sectorID = map (rotateLetter rotations) encryptedRoomName
+                                             where rotations = mod sectorID 26
+
+
+rotateLetter :: Int -> Char -> Char
+rotateLetter rotations c
+  | c == '-' = ' '
+  | ord c + rotations > ord 'z' = chr (ord c + rotations - 26)
+  | otherwise = chr (ord c + rotations)

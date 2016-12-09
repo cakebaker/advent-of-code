@@ -87,7 +87,7 @@ decryptRoomName encryptedRoomName sectorID = map (rotateLetter rotations) encryp
 
 
 rotateLetter :: Int -> Char -> Char
+rotateLetter _ '-' = ' '
 rotateLetter rotations c
-  | c == '-' = ' '
   | ord c + rotations > ord 'z' = chr (ord c + rotations - 26)
   | otherwise = chr (ord c + rotations)

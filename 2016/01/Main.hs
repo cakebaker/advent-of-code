@@ -27,7 +27,7 @@ parse (x:xs)
 
 
 getDistanceToHQ :: [Instruction] -> Int
-getDistanceToHQ instructions = abs $ (fst destination) + (snd destination)
+getDistanceToHQ instructions = (abs $ fst destination) + (abs $ snd destination)
                                where destination = move (0, 0) North instructions
 
 

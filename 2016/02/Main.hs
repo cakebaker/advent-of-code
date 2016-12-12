@@ -13,10 +13,10 @@ main = do
 
 
 parse :: Char -> (Int -> Int)
-parse 'U' = up
-parse 'D' = down
-parse 'L' = left
-parse 'R' = right
+parse 'U' = move (-3) [1, 2, 3]
+parse 'D' = move   3  [7, 8, 9]
+parse 'L' = move (-1) [1, 4, 7]
+parse 'R' = move   1  [3, 6, 9]
 
 
 startButton :: Int
@@ -32,25 +32,7 @@ execute button [] = button
 execute button (f:fs) = execute (f button) fs
 
 
-up :: Int -> Int
-up x
-  | x < 4 = x
-  | otherwise = x - 3
-
-
-down :: Int -> Int
-down x
-  | x > 6 = x
-  | otherwise = x + 3
-
-
-left :: Int -> Int
-left x
-  | elem x [1, 4, 7] = x
-  | otherwise = x - 1
-
-
-right :: Int -> Int
-right x
-  | elem x [3, 6, 9] = x
-  | otherwise = x + 1
+move :: Int -> [Int] -> Int -> Int
+move step border x
+  | elem x border = x
+  | otherwise     = x + step

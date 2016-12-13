@@ -1,4 +1,5 @@
 import System.Environment
+import Data.Array
 
 
 main :: IO ()
@@ -7,32 +8,49 @@ main = do
   content <- readFile filename
 
   let instructions = map (\xs -> map parse xs) $ lines content
-  let resultPuzzle1 = getBathroomCode instructions
+  let resultPuzzle1 = getBathroomCode keypad (2,2) instructions
 
   putStrLn $ "Bathroom code is: " ++ resultPuzzle1
 
 
-parse :: Char -> (Int -> Int)
-parse 'U' = move (-3) [1, 2, 3]
-parse 'D' = move   3  [7, 8, 9]
-parse 'L' = move (-1) [1, 4, 7]
-parse 'R' = move   1  [3, 6, 9]
+type Position = (Int, Int)
+type Keypad = Array (Int, Int) Char
 
 
-startButton :: Int
-startButton = 5
+keypad :: Keypad
+keypad = array ((1,1), (3,3)) [((1,1), '1'), ((2,1), '2'), ((3,1), '3'),
+                               ((1,2), '4'), ((2,2), '5'), ((3,2), '6'),
+                               ((1,3), '7'), ((2,3), '8'), ((3,3), '9')]
 
 
-getBathroomCode :: [[(Int -> Int)]] -> String
-getBathroomCode instructions = foldr1 (++) $ map show $ tail $ scanl execute startButton instructions
+parse :: Char -> Keypad -> Position -> Position
+parse 'U' = move   0 (-1)
+parse 'D' = move   0   1
+parse 'L' = move (-1)  0
+parse 'R' = move   1   0
 
 
-execute :: Int -> [(Int -> Int)] -> Int
-execute button [] = button
-execute button (f:fs) = execute (f button) fs
+getBathroomCode :: Keypad -> Position -> [[Keypad -> Position -> Position]] -> String
+getBathroomCode k p instructions = map (\x -> k ! x) $ tail $ scanl (execute k) p instructions
 
 
-move :: Int -> [Int] -> Int -> Int
-move step border x
-  | elem x border = x
-  | otherwise     = x + step
+execute :: Keypad -> Position -> [(Keypad -> Position -> Position)] -> Position
+execute _ position [] = position
+execute k position (f:fs) = execute k (f k position) fs
+
+
+move :: Int -> Int -> Keypad -> Position -> Position
+move xOffset yOffset k currentPosition@(x,y)
+  | isInBounds k newPosition = newPosition
+  | otherwise                = currentPosition
+  where newPosition = (x + xOffset, y + yOffset)
+
+
+isInBounds :: Keypad -> Position -> Bool
+isInBounds k (x,y)
+  | x < minBound || x > maxBound = False
+  | y < minBound || y > maxBound = False
+  | otherwise                    = True
+  -- assumption: keypads are squares
+  where minBound = fst $ fst $ bounds k
+        maxBound = snd $ snd $ bounds k

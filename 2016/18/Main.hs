@@ -13,15 +13,19 @@ main = do
   [filename] <- getArgs
   content <- readFile filename
 
-  let initialRow = lines content
-  let resultPuzzle1 = countSafeTiles $ generateRows 40 initialRow
+  let initialRow = head $ lines content
+
+  let resultPuzzle1 = countSafeTiles 40 0 initialRow
   putStrLn $ "40 rows contain " ++ show resultPuzzle1 ++ " safe tiles"
 
+  let resultPuzzle2 = countSafeTiles 400000 0 initialRow
+  putStrLn $ "400000 rows contain " ++ show resultPuzzle2 ++ " safe tiles"
 
-generateRows :: Int -> [String] -> [String]
-generateRows maxRows rows@(x:_)
-  | maxRows == length rows = rows
-  | otherwise              = generateRows maxRows (generateNextRow x : rows)
+
+countSafeTiles :: Int -> Int -> String -> Int
+countSafeTiles 0 safeTileCounter _            = safeTileCounter
+countSafeTiles rowCounter safeTileCounter row = countSafeTiles (pred rowCounter) (safeTileCounter + safeTiles) (generateNextRow row)
+                                                where safeTiles = length $ filter (== safeTile) row
 
 
 generateNextRow :: String -> String
@@ -39,7 +43,3 @@ generate (left:center:right:xs)
   | left == safeTile && center == safeTile && right == trap     = trap : generate rest
   | otherwise                                                   = safeTile : generate rest
   where rest = center:right:xs
-
-
-countSafeTiles :: [String] -> Int
-countSafeTiles rows = sum $ map (\row -> length $ filter (== safeTile) row) rows

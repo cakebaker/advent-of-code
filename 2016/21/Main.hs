@@ -7,12 +7,20 @@ main :: IO ()
 main = do
   [filename] <- getArgs
   content <- readFile filename
+  let instructions = lines content
 
-  let operations = map parse $ lines content
-  let startValue = "abcdefgh"
+  let scramblingOperations = map parse $ instructions
+  let unscrambledPassword = "abcdefgh"
 
-  let resultPuzzle1 = execute operations startValue
+  let resultPuzzle1 = execute scramblingOperations unscrambledPassword
   putStrLn $ "The scrambled password is: " ++ resultPuzzle1
+
+
+  let scrambledPassword = "fbgdceah"
+  let unscramblingOperations = reverse $ map parseForUnscrambling $ instructions
+
+  let resultPuzzle2 = execute unscramblingOperations scrambledPassword
+  putStrLn $ "The unscrambled password is: " ++ resultPuzzle2
 
 
 data Direction = Left | Right
@@ -26,6 +34,18 @@ parse s
   | isPrefixOf "rotate based" s      = rotateOnPosition $ head $ last elements
   | isPrefixOf "swap letter" s       = swapLetter (head $ elements !! 2) (head $ last elements)
   | isPrefixOf "swap position" s     = swapPosition (read $ elements !! 2) (read $ last elements)
+  | isPrefixOf "reverse positions" s = reversePositions (read $ elements !! 2) (read $ last elements)
+  where elements = words s
+
+
+parseForUnscrambling :: String -> (String -> String)
+parseForUnscrambling s
+  | isPrefixOf "move position" s     = movePosition (read $ last elements) (read $ elements !! 2)
+  | isPrefixOf "rotate right" s      = rotate Left (read $ elements !! 2)
+  | isPrefixOf "rotate left" s       = rotate Right (read $ elements !! 2)
+  | isPrefixOf "rotate based" s      = reverseRotateOnPosition $ head $ last elements
+  | isPrefixOf "swap letter" s       = swapLetter (head $ last elements) (head $ elements !! 2)
+  | isPrefixOf "swap position" s     = swapPosition (read $ last elements) (read $ elements !! 2)
   | isPrefixOf "reverse positions" s = reversePositions (read $ elements !! 2) (read $ last elements)
   where elements = words s
 
@@ -91,3 +111,13 @@ elemIndex :: String -> Char -> Int -> Int
 elemIndex (x:xs) c index
   | x == c    = index
   | otherwise = elemIndex xs c (succ index)
+
+
+reverseRotateOnPosition :: Char -> String -> String
+reverseRotateOnPosition c s = findUnscrambled c s s
+
+
+findUnscrambled :: Char -> String -> String -> String
+findUnscrambled c unscrambled scrambled
+  | rotateOnPosition c unscrambled == scrambled = unscrambled
+  | otherwise                                   = findUnscrambled c (rotate Left 1 unscrambled) scrambled

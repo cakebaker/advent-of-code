@@ -11,7 +11,10 @@ main = do
   let charCounts = map countChars columns
 
   let resultPuzzle1 = map mostFrequent charCounts
-  putStrLn ("Error corrected version of the message: " ++ resultPuzzle1)
+  putStrLn $ "Error corrected version of the message: " ++ resultPuzzle1
+
+  let resultPuzzle2 = map leastFrequent charCounts
+  putStrLn $ "Original message: " ++ resultPuzzle2
 
 
 countChars :: String -> [(Char, Int)]
@@ -20,6 +23,10 @@ countChars s = [ (x,c) | x <- ['a'..'z'], let c = (length.filter (==x)) s, c > 0
 
 mostFrequent :: [(Char, Int)] -> Char
 mostFrequent xs = fst . head $ sortBy sortByMostFrequent xs
+
+
+leastFrequent :: [(Char, Int)] -> Char
+leastFrequent xs = fst . last $ sortBy sortByMostFrequent xs
 
 
 sortByMostFrequent :: (Char, Int) -> (Char, Int) -> Ordering

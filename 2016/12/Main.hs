@@ -17,7 +17,10 @@ main = do
   let registers = array (0, 3) [(i, 0) | i <- [0..3]]
   let resultPuzzle1 = getValueOfRegisterA instructions registers
 
-  putStrLn $ "The value in register a is: " ++ show resultPuzzle1
+  putStrLn $ "Puzzle 1: The value in register a is " ++ show resultPuzzle1
+
+  let resultPuzzle2 = getValueOfRegisterA instructions (registers // [(2, 1)])
+  putStrLn $ "Puzzle 2: The value in register a is " ++ show resultPuzzle2
 
 
 getValueOfRegisterA :: [Instruction] -> Registers -> Int

@@ -1,4 +1,5 @@
 import System.Environment
+import Data.List (isInfixOf)
 
 
 main :: IO ()
@@ -7,14 +8,29 @@ main = do
   content <- readFile filename
 
   let ips = lines content
-  let resultPuzzle1 = countIPsWithTLS ips
 
+  let resultPuzzle1 = countIPsWithTLS ips
   putStrLn $ "IPs with TLS support: " ++ show resultPuzzle1
+
+  let resultPuzzle2 = countIPsWithSSL ips
+  putStrLn $ "IPs with SSL support: " ++ show resultPuzzle2
 
 
 countIPsWithTLS :: [String] -> Int
-countIPsWithTLS ips = length $ filter (not . hasHyperNetWithABBA) ipsWithABBAs
+countIPsWithTLS ips = length $ filter (not . hasHypernetWithABBA) ipsWithABBAs
                       where ipsWithABBAs = filter hasABBA ips
+
+
+countIPsWithSSL :: [String] -> Int
+countIPsWithSSL ips = length $ filter hasSSL ipsWithABAs
+                      where ipsWithABAs = filter hasABA ips
+
+
+hasSSL :: String -> Bool
+hasSSL ip = hasBAB babs hypernets
+            where supernets = getSupernets ip []
+                  hypernets = getHypernets ip []
+                  babs      = map toBAB $ foldr1 (++) $ map getABAs supernets
 
 
 hasABBA :: String -> Bool
@@ -33,16 +49,62 @@ isABBA (a:b:c:d:[])
   | otherwise                  = False
 
 
-hasHyperNetWithABBA :: String -> Bool
-hasHyperNetWithABBA s = any hasABBA $ getHyperNets s []
+hasHypernetWithABBA :: String -> Bool
+hasHypernetWithABBA s = any hasABBA $ getHypernets s []
 
 
-getHyperNets :: String -> String -> [String]
-getHyperNets [] [] = []
-getHyperNets (x:[]) buffer
+getHypernets :: String -> String -> [String]
+getHypernets [] [] = []
+getHypernets (x:[]) buffer
   | x == ']'  = buffer : []
   | otherwise = []
-getHyperNets (x:xs) buffer
-  | x == '['  = getHyperNets xs []
-  | x == ']'  = buffer : (getHyperNets xs [])
-  | otherwise = getHyperNets xs (buffer ++ [x])
+getHypernets (x:xs) buffer
+  | x == '['  = getHypernets xs []
+  | x == ']'  = buffer : (getHypernets xs [])
+  | otherwise = getHypernets xs (buffer ++ [x])
+
+
+getSupernets :: String -> String -> [String]
+getSupernets [] buffer = []
+getSupernets (x:[]) buffer
+  | x == ']'  = []
+  | otherwise = (buffer ++ [x]) : []
+getSupernets (x:xs) buffer
+  | x == '['  = buffer : (getSupernets xs [])
+  | x == ']'  = getSupernets xs []
+  | otherwise = getSupernets xs (buffer ++ [x])
+
+
+hasABA :: String -> Bool
+hasABA []            = False
+hasABA (_:[])        = False
+hasABA (_:_:[])      = False
+hasABA (a:b:c:xs)
+  | isABA (a:b:c:[]) = True
+  | otherwise        = hasABA (b:c:xs)
+
+
+hasBAB :: [String] -> [String] -> Bool
+hasBAB [] _ = False
+hasBAB (aba:abas) xs
+  | any id $ map (isInfixOf aba) xs = True
+  | otherwise                       = hasBAB abas xs
+
+
+isABA :: String -> Bool
+isABA (a:b:c:[])
+  | a == c && a /= b = True
+  | otherwise        = False
+
+
+getABAs :: String -> [String]
+getABAs []           = []
+getABAs (_:[])       = []
+getABAs (_:_:[])     = []
+getABAs (a:b:c:xs)
+  | isABA (a:b:c:[]) = (a:b:c:[]) : getABAs (b:c:xs)
+  | otherwise        = getABAs (b:c:xs)
+
+
+toBAB :: String -> String
+toBAB (a:b:_) = (b:a:b:[])

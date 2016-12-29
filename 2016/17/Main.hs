@@ -31,9 +31,20 @@ main = do
   let resultPuzzle1 = findShortestPath passcode (0,0)
   putStrLn $ "The shortest path is: " ++ resultPuzzle1
 
+  let resultPuzzle2 = findLongestPathLength passcode (0,0)
+  putStrLn $ "The length of the longest path is: " ++ show resultPuzzle2
+
 
 findShortestPath :: String -> Position -> String
-findShortestPath passcode position = map head $ map show $ head $ sortBy (comparing length) $ find passcode [] position
+findShortestPath passcode position = map head $ map show $ head $ findAndSortPaths passcode position
+
+
+findLongestPathLength :: String -> Position -> Int
+findLongestPathLength passcode position = length $ last $ findAndSortPaths passcode position
+
+
+findAndSortPaths :: String -> Position -> [[Direction]]
+findAndSortPaths passcode position = sortBy (comparing length) $ find passcode [] position
 
 
 find :: String -> [Direction] -> Position -> [[Direction]]

@@ -1,5 +1,4 @@
 import System.Environment
-import Data.List (zip7)
 
 
 main :: IO ()

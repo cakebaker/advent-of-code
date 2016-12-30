@@ -12,6 +12,10 @@ main = do
   let resultPuzzle1 = timeStep 1 discs
   putStrLn $ "The first time to press the button is: " ++ show resultPuzzle1
 
+  let newDisc = parse "Disc #7 has 11 positions; at time=0, it is at position 0."
+  let resultPuzzle2 = timeStep 1 (discs ++ [newDisc])
+  putStrLn $ "The first time to press the button with the new disc is: " ++ show resultPuzzle2
+
 
 parse :: String -> (Int, [Int])
 parse s = (highestPosition, initDisc discID currentPosition positions)

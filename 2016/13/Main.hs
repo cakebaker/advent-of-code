@@ -20,7 +20,6 @@ main = do
   let startPosition = (1,1)
   let resultPuzzle1 = findShortestPath startPosition
   putStrLn $ "The fewest number of steps is: " ++ show resultPuzzle1
-  print resultPuzzle1
 
 
 findShortestPath :: Position -> Int

@@ -1,7 +1,5 @@
 import Numeric (showIntAtBase)
 import Data.Char (intToDigit)
-import Data.List (sortBy)
-import Data.Ord (comparing)
 
 
 type Position = (Int, Int)

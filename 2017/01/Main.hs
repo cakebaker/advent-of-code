@@ -7,14 +7,18 @@ main = do
   content <- readFile filename
 
   let captcha = map digitToInt $ head $ lines content
-  let resultPuzzle1 = sumMatchingDigits (captcha ++ [head captcha]) 0
+  let infiniteCaptcha = cycle captcha
 
+  let resultPuzzle1 = sumMatching captcha (tail infiniteCaptcha) 0
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
 
+  let offset = length captcha `div` 2
+  let resultPuzzle2 = sumMatching captcha (drop offset infiniteCaptcha) 0
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
 
-sumMatchingDigits :: [Int] -> Int -> Int
-sumMatchingDigits [] total  = total
-sumMatchingDigits [_] total = total
-sumMatchingDigits (x:y:xs) total
-  | x == y    = sumMatchingDigits (y:xs) (total + x)
-  | otherwise = sumMatchingDigits (y:xs) total
+
+sumMatching :: [Int] -> [Int] -> Int -> Int
+sumMatching [] _ total = total
+sumMatching (x:xs) (y:ys) total
+  | x == y    = sumMatching xs ys (total + x)
+  | otherwise = sumMatching xs ys total

@@ -1,5 +1,3 @@
-import System.Environment
-
 main :: IO ()
 main = do
   let puzzleInput = 347991

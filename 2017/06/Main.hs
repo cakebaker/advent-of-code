@@ -1,4 +1,5 @@
 import System.Environment
+import Data.List (elemIndex)
 import qualified Data.Vector.Unboxed as V
 
 main :: IO ()
@@ -8,17 +9,22 @@ main = do
 
   let memoryBanks = V.fromList $ map (\s -> read s :: Int) $ words $ head $ lines content
 
-  let resultPuzzle1 = startRedistributionCycles memoryBanks
+  let (resultPuzzle1, resultPuzzle2) = startRedistributionCycles memoryBanks
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
 
 
-startRedistributionCycles :: V.Vector Int -> Int
-startRedistributionCycles v = doRedistributionCycle v []
+startRedistributionCycles :: V.Vector Int -> (Int, Int)
+startRedistributionCycles v = (result1, result2)
+                              where (vec, history) = doRedistributionCycle v []
+                                    result1        = length history
+                                    result2        = result1 - i
+                                    (Just i)       = elemIndex vec (reverse history)
 
 
-doRedistributionCycle :: V.Vector Int -> [V.Vector Int] -> Int
+doRedistributionCycle :: V.Vector Int -> [V.Vector Int] -> (V.Vector Int, [V.Vector Int])
 doRedistributionCycle v history
-  | elem v history = length history
+  | elem v history = (v, history)
   | otherwise      = doRedistributionCycle (redistribute v) (v:history)
 
 

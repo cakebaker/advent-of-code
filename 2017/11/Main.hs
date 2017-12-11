@@ -17,20 +17,20 @@ data Step = N | NE | SE | S | SW | NW deriving (Show)
 
 type Point = (Int, Int, Int)
 
+
 solve :: [Step] -> Int
 solve steps = distance start end
               where start = (0,0,0)
-                    end   = doStep steps start
+                    end   = foldl (\pos step -> next pos step) start steps
 
 -- using cubic coordinates, see https://www.redblobgames.com/grids/hexagons/
-doStep :: [Step] -> Point -> Point
-doStep [] p           = p
-doStep (a:as) (x,y,z) = case a of N  -> doStep as (x, y + 1, z - 1)
-                                  NE -> doStep as (x + 1, y, z - 1)
-                                  SE -> doStep as (x + 1, y - 1, z)
-                                  S  -> doStep as (x, y - 1, z + 1)
-                                  SW -> doStep as (x - 1, y, z + 1)
-                                  NW -> doStep as (x - 1, y + 1, z)
+next :: Point -> Step -> Point
+next (x,y,z) step = case step of N  -> (x, y + 1, z - 1)
+                                 NE -> (x + 1, y, z - 1)
+                                 SE -> (x + 1, y - 1, z)
+                                 S  -> (x, y - 1, z + 1)
+                                 SW -> (x - 1, y, z + 1)
+                                 NW -> (x - 1, y + 1, z)
 
 distance :: Point -> Point -> Int
 distance (x1,y1,z1) (x2,y2,z2) = (abs(x1 - x2) + abs(y1 - y2) + abs(z1 - z2)) `div` 2

@@ -12,19 +12,31 @@ main = do
   let resultPuzzle1 = solve path
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
 
+  let resultPuzzle2 = solve2 path
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
+
 
 data Step = N | NE | SE | S | SW | NW deriving (Show)
 
-type Point = (Int, Int, Int)
+type Position = (Int, Int, Int)
 
 
 solve :: [Step] -> Int
 solve steps = distance start end
               where start = (0,0,0)
-                    end   = foldl (\pos step -> next pos step) start steps
+                    end   = foldl (\currentPos step -> next currentPos step) start steps
+
+solve2 :: [Step] -> Int
+solve2 steps = maximum distances
+               where start     = (0,0,0)
+                     positions = foldl addNext [start] steps
+                     distances = map (distance start) positions
+
+addNext :: [Position] -> Step -> [Position]
+addNext positions@(currentPos:_) step = ((next currentPos step):positions)
 
 -- using cubic coordinates, see https://www.redblobgames.com/grids/hexagons/
-next :: Point -> Step -> Point
+next :: Position -> Step -> Position
 next (x,y,z) step = case step of N  -> (x, y + 1, z - 1)
                                  NE -> (x + 1, y, z - 1)
                                  SE -> (x + 1, y - 1, z)
@@ -32,7 +44,7 @@ next (x,y,z) step = case step of N  -> (x, y + 1, z - 1)
                                  SW -> (x - 1, y, z + 1)
                                  NW -> (x - 1, y + 1, z)
 
-distance :: Point -> Point -> Int
+distance :: Position -> Position -> Int
 distance (x1,y1,z1) (x2,y2,z2) = (abs(x1 - x2) + abs(y1 - y2) + abs(z1 - z2)) `div` 2
 
 steps :: ReadP [Step]

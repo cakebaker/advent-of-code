@@ -16,9 +16,21 @@ main = do
   let resultPuzzle1 = solve programs
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
 
+  let resultPuzzle2 = solve2 programs
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
+
 
 solve :: Vector [Int] -> Int
 solve programs = length $ getGroup programs [0] Set.empty
+
+solve2 :: Vector [Int] -> Int
+solve2 programs = getGroups programs [0..(V.length programs) - 1] 0 Set.empty
+
+getGroups :: Vector [Int] -> [Int] -> Int -> Set Int -> Int
+getGroups v [] counter _    = counter
+getGroups v (i:is) counter usedIDs
+  | Set.notMember i usedIDs = getGroups v is (counter + 1) (Set.union usedIDs (getGroup v [i] Set.empty))
+  | otherwise               = getGroups v is counter usedIDs
 
 getGroup :: Vector [Int] -> [Int] -> Set Int -> Set Int
 getGroup v [] connected     = connected

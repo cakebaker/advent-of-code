@@ -11,7 +11,7 @@ main = do
   [filename] <- getArgs
   content <- readFile filename
 
-  let programs = V.fromList $ map (fst . last) $ map (readP_to_S program) $ lines content
+  let programs = V.fromList $ map (fst . last) $ map (readP_to_S connectedProgramIDs) $ lines content
 
   let resultPuzzle1 = solve programs
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
@@ -44,19 +44,9 @@ updatePipeline pipeline (x:xs) s
   | Set.notMember x s        = updatePipeline (x:pipeline) xs s
   | otherwise                = updatePipeline pipeline xs s
 
-program :: ReadP [Int]
-program = do
-  id <- programID
-  string " <-> "
-  ids <- connectedProgramIDs
-  return ids
-
-programID :: ReadP Int
-programID = do
-  id <- many1 $ satisfy isDigit
-  return (read id)
-
 connectedProgramIDs :: ReadP [Int]
 connectedProgramIDs = do
+  many1 $ satisfy isDigit
+  string " <-> "
   ids <- sepBy (many1 $ satisfy isDigit) (string ", ")
   return (map read ids)

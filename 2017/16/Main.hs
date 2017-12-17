@@ -16,8 +16,21 @@ main = do
   let resultPuzzle1 = executeMoves moves programs
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
 
+  let resultPuzzle2 = solve2 (tail $ iterate (executeMoves moves) programs)
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
+
 
 data DanceMove = Spin Int | Exchange Int Int | Partner Char Char deriving (Show)
+
+solve2 :: [Vector Char] -> Vector Char
+solve2 all@(x:xs) = all !! (remaining - 1)
+                    where repetitionFactor = findRepetitionFactor 1 x xs
+                          remaining        = 1000000000 `mod` repetitionFactor
+
+findRepetitionFactor :: Int -> Vector Char -> [Vector Char] -> Int
+findRepetitionFactor counter needle (x:xs)
+  | needle == x = counter
+  | otherwise   = findRepetitionFactor (counter + 1) needle xs
 
 executeMoves :: [DanceMove] -> Vector Char -> Vector Char
 executeMoves [] v                     = v

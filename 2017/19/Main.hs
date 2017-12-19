@@ -1,6 +1,7 @@
 import Prelude hiding (Left, Right)
 import System.Environment
 import Data.Array
+import Data.Char (isAlpha)
 
 main :: IO ()
 main = do
@@ -9,17 +10,20 @@ main = do
 
   let diagram = createDiagram $ lines content
 
-  let resultPuzzle1 = solve diagram
+  let resultPuzzle1 = solve diagram charCollector
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
+
+  let resultPuzzle2 = length $ solve diagram stepCollector
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
 
 
 data Direction = Up | Down | Left | Right deriving (Eq)
 type Diagram = Array (Int, Int) Char
 type Position = (Int, Int)
 
-solve :: Diagram -> String
-solve d = move d startPosition Down ""
-          where startPosition = findStart d (0,0)
+solve :: Diagram -> (Char -> String -> String) -> String
+solve d collector = walk collector d (startPosition, Down) ""
+                    where startPosition = findStart d (0,0)
 
 createDiagram :: [String] -> Diagram
 createDiagram all@(x:_) = listArray ((0,0), (rows, cols)) . concat $ all
@@ -31,14 +35,24 @@ findStart d position@(row, col)
   | d ! position /= ' ' = position
   | otherwise           = findStart d (row , col + 1)
 
-move :: Diagram -> Position -> Direction -> String -> String
-move d position@(row, col) dir collection
-  | isOutside d position = reverse collection
-  | value == ' '         = reverse collection
-  | value == '|'         = move d nextPosition dir collection
-  | value == '-'         = move d nextPosition dir collection
-  | value == '+'         = move d selectedPosition selectedDir collection
-  | otherwise            = move d nextPosition dir (value:collection)
+stepCollector :: Char -> String -> String
+stepCollector c s = (c:s)
+
+charCollector :: Char -> String -> String
+charCollector c s
+  | isAlpha c = s ++ [c]
+  | otherwise = s
+
+walk :: (Char -> String -> String) -> Diagram -> (Position, Direction) -> String -> String
+walk f d (position, dir) collection
+  | isOutside d position || value == ' ' = collection
+  | otherwise                            = walk f d (step d position dir) (f value collection)
+  where value = d ! position
+
+step :: Diagram -> Position -> Direction -> (Position, Direction)
+step d position@(row, col) dir
+  | value == '+'         = (selectedPosition, selectedDir)
+  | otherwise            = (nextPosition, dir)
   where value                           = d ! position
         nextPosition                    = (nextRow row dir, nextCol col dir)
         (selectedPosition, selectedDir) = whereTo d position dir

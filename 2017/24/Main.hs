@@ -1,7 +1,7 @@
 import System.Environment
 import Data.Char (isDigit)
 import Text.ParserCombinators.ReadP
-import Data.List (delete)
+import Data.List (delete, maximumBy)
 
 main :: IO ()
 main = do
@@ -9,9 +9,13 @@ main = do
   content <- readFile filename
 
   let components = map (fst . last) $ map (readP_to_S component) $ lines content
+  let bridges = buildBridges components components [] 0
 
-  let resultPuzzle1 = maximum $ map strength $ buildBridges components components [] 0
+  let resultPuzzle1 = maximum $ map strength bridges
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
+
+  let resultPuzzle2 = fst $ maximumBy lengthStrength $ map (\x -> (strength x, length x)) bridges
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
 
 
 type Component = (Int, Int)
@@ -27,6 +31,12 @@ buildBridges all (component@(a,b):xs) path z
 
 strength :: [Component] -> Int
 strength xs = foldl (\acc (a,b) -> acc + a + b) 0 xs
+
+lengthStrength :: (Int, Int) -> (Int, Int) -> Ordering
+lengthStrength (a1, b1) (a2, b2)
+  | b1 < b2   = LT
+  | b1 > b2   = GT
+  | otherwise = compare a1 a2
 
 component :: ReadP Component
 component = do

@@ -8,9 +8,22 @@ main = do
 
   let units = head $ lines content
 
-  let resultPuzzle1 = length $ process units
+  let resultPuzzle1 = lengthOfReactedPolymer units
   putStrLn $ "Result of puzzle 1: " ++ show resultPuzzle1
 
+  -- XXX very slow
+  let resultPuzzle2 = minLengthOfReactedPolymers units ['a'..'z']
+  putStrLn $ "Result of puzzle 2: " ++ show resultPuzzle2
+
+
+minLengthOfReactedPolymers :: [Char] -> [Char] -> Int
+minLengthOfReactedPolymers units unitTypes = minimum $ map (\x -> lengthOfReactedPolymer $ removeUnitType x units) $ unitTypes
+
+removeUnitType :: Char -> [Char] -> [Char]
+removeUnitType c xs = filter (\x -> x /= c && x /= toOppositePolarity c) xs
+
+lengthOfReactedPolymer :: [Char] -> Int
+lengthOfReactedPolymer xs = length $ process xs
 
 process :: [Char] -> [Char]
 process [] = []

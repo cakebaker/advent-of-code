@@ -15,6 +15,9 @@ main = do
   let resultPuzzle1 = solvePuzzle1 sortedRecords
   putStrLn $ "The result of puzzle 1 is: " ++ show resultPuzzle1
 
+  let resultPuzzle2 = solvePuzzle2 sortedRecords
+  putStrLn $ "The result of puzzle 2 is: " ++ show resultPuzzle2
+
 
 type Record    = (Timestamp, Event)
 data Timestamp = Timestamp Int Int Int Int Int deriving (Show, Eq, Ord)
@@ -25,6 +28,11 @@ solvePuzzle1 records = sleepiestGuard * mostAsleepMin
                        where sleepiestGuard = findSleepiestGuard sleepingTimes
                              mostAsleepMin  = findMostAsleepMinute sleepingTimes sleepiestGuard
                              sleepingTimes  = recordsToSleepingTimes Map.empty records 0
+
+solvePuzzle2 :: [Record] -> Int
+solvePuzzle2 records = sleepiestGuardByMin * mostAsleepMin
+                       where (sleepiestGuardByMin, mostAsleepMin, _) = findSleepiestByMinute sleepingTimes
+                             sleepingTimes                           = recordsToSleepingTimes Map.empty records 0
 
 recordsToSleepingTimes :: Map.Map Int [Int] -> [Record] -> Int -> Map.Map Int [Int]
 recordsToSleepingTimes m [] _                = m
@@ -38,6 +46,13 @@ findSleepiestGuard m = fst $ foldl1 (\(a,b) (c,d) -> if length b > length d then
 
 findMostAsleepMinute :: Map.Map Int [Int] -> Int -> Int
 findMostAsleepMinute sleepingTimes guard = head $ foldl1 (\a b -> if length a > length b then a else b) $ group $ sort $ (sleepingTimes Map.! guard)
+
+findSleepiestByMinute :: Map.Map Int [Int] -> (Int, Int, Int)
+findSleepiestByMinute sleepingTimes = foldl1 (\(a,b,c) (d,e,f) -> if c > f then (a,b,c) else (d,e,f)) $ map (findMostAsleepMinute' sleepingTimes) $ Map.toList sleepingTimes
+
+findMostAsleepMinute' :: Map.Map Int [Int] -> (Int, [Int]) -> (Int, Int, Int)
+findMostAsleepMinute' sleepingTimes (guard, xs) = (guard, mostAsleepMin, length $ filter (== mostAsleepMin) xs)
+                                                  where mostAsleepMin = findMostAsleepMinute sleepingTimes guard
 
 -- parsing
 

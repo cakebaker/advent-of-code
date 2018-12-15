@@ -23,10 +23,8 @@ nextRecipes ((posA, posB), recipes) = ((newPosA, newPosB), allRecipes)
                                             newPosA    = mod (posA + valA + 1) (Seq.length allRecipes)
                                             newPosB    = mod (posB + valB + 1) (Seq.length allRecipes)
 
-lastTen :: ((Int, Int), Seq Int) -> Seq Int
-lastTen (_, xs) = Seq.reverse $ Seq.take 10 $ Seq.reverse xs
+lastTen :: ((a, a), Seq a) -> Seq a
+lastTen (_, xs) = snd $ Seq.splitAt (Seq.length xs - 10) xs
 
 splitIntoDigits :: Int -> [Int]
-splitIntoDigits x
-  | x < 10    = [x]
-  | otherwise = [1, mod x 10]
+splitIntoDigits x = map (\x -> read [x] :: Int) (show x)

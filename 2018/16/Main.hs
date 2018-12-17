@@ -8,7 +8,7 @@ main = do
   [filename] <- getArgs
   content <- readFile filename
 
-  let samples = parse $ lines content
+  let (samples, testProgram) = parse [] $ lines content
 
   let resultPuzzle1 = solvePuzzle1 samples
   putStrLn $ "The result of puzzle 1 is: " ++ show resultPuzzle1
@@ -100,11 +100,10 @@ eqrr (_, inputA, inputB, output) registers = update output newValue registers
 
 -- parsing
 
-parse :: [String] -> [Sample]
-parse []                            = []
-parse ("":"":"":xs)                 = [] -- ignore input for puzzle 2 for now
-parse ("":xs)                       = parse xs
-parse (before:instruction:after:xs) = (parseInstruction instruction, (parseRegisters before, parseRegisters after)):parse xs
+parse :: [Sample] -> [String] -> ([Sample], [Instruction])
+parse samples ("":"":"":xs)                 = (samples, parseTestProgram xs)
+parse samples ("":xs)                       = parse samples xs
+parse samples (before:instruction:after:xs) = parse ((parseInstruction instruction, (parseRegisters before, parseRegisters after)):samples) xs
 
 parseInstruction :: String -> Instruction
 parseInstruction s = (ints !! 0, ints !! 1, ints !! 2, ints !! 3)
@@ -112,3 +111,7 @@ parseInstruction s = (ints !! 0, ints !! 1, ints !! 2, ints !! 3)
 
 parseRegisters :: String -> Registers
 parseRegisters s = Seq.fromList $ map read ([s !! 9]:[s !! 12]:[s !! 15]:[s !! 18]:[])
+
+parseTestProgram :: [String] -> [Instruction]
+parseTestProgram []     = []
+parseTestProgram (x:xs) = (parseInstruction x):parseTestProgram xs

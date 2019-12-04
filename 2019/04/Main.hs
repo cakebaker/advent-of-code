@@ -24,11 +24,7 @@ isAdvancedPassword x = doDigitsNeverDecrease digits && containsStrictDigitPair d
                        where digits = toDigits x
 
 containsDigitPair :: [Int] -> Bool
-containsDigitPair []     = False
-containsDigitPair (_:[]) = False
-containsDigitPair (a:b:xs)
-  | a == b    = True
-  | otherwise = containsDigitPair (b:xs)
+containsDigitPair xs = any (\x -> length x >= 2) $ group xs
 
 containsStrictDigitPair :: [Int] -> Bool
 containsStrictDigitPair xs = any (\x -> length x == 2) $ group xs

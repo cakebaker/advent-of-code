@@ -14,6 +14,7 @@ main = do
   [filename] <- getArgs
   content <- readFile filename
 
+  let initialInstructionPointer = 0
   let intCodes = head $ map (fst . last) $ map (readP_to_S codes) $ lines content
   let program  = V.fromList intCodes
 
@@ -22,14 +23,12 @@ main = do
 
 
 type Memory = Vector Int
-
-initialInstructionPointer :: Int
-initialInstructionPointer = 0
+type ProgramState = (Int, Memory)
 
 pattern PositionMode  = 0
 pattern ImmediateMode = 1
 
-exec :: (Int, Memory) -> (Int, Memory)
+exec :: ProgramState -> ProgramState
 exec programState@(instructionPointer, memory)
   | opcode == 1 = exec $ execOp parameterModes (+) programState
   | opcode == 2 = exec $ execOp parameterModes (*) programState
@@ -40,20 +39,20 @@ exec programState@(instructionPointer, memory)
         opcode                                          = (10 * d) + e
         parameterModes                                  = [mode1stParam, mode2ndParam, mode3rdParam]
 
-execOp :: [Int] -> (Int -> Int -> Int) -> (Int, Memory) -> (Int, Memory)
+execOp :: [Int] -> (Int -> Int -> Int) -> ProgramState -> ProgramState
 execOp (modeA:modeB:_:[]) op (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, op valA valB)])
                                                             where (a:b:target:[])   = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
                                                                   valA              = resolveMode a modeA memory
                                                                   valB              = resolveMode b modeB memory
                                                                   instructionLength = 4
 
-input :: (Int, Memory) -> (Int, Memory)
+input :: ProgramState -> ProgramState
 input (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, inputValue)])
                                      where target            = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
                                            instructionLength = 2
                                            inputValue        = 1
 
-output :: Int -> (Int, Memory) -> (Int, Memory)
+output :: Int -> ProgramState -> ProgramState
 output mode (instructionPointer, memory) = trace (show $ resolveMode value mode memory) (instructionPointer + instructionLength, memory)
                                            where value             = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
                                                  instructionLength = 2

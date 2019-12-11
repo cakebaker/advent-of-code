@@ -15,29 +15,37 @@ main = do
   content <- readFile filename
 
   let initialInstructionPointer = 0
+  let inputValuePuzzle1 = 1
+  let inputValuePuzzle2 = 5
   let intCodes = head $ map (fst . last) $ map (readP_to_S codes) $ lines content
   let program  = V.fromList intCodes
 
-  let !result1 = exec (initialInstructionPointer, program)
+  let !result1 = exec inputValuePuzzle1 (initialInstructionPointer, program)
+  let !result2 = exec inputValuePuzzle2 (initialInstructionPointer, program)
   return ()
 
 
-type Memory = Vector Int
+type Memory       = Vector Int
 type ProgramState = (Int, Memory)
 
 pattern PositionMode  = 0
 pattern ImmediateMode = 1
 
-exec :: ProgramState -> ProgramState
-exec programState@(instructionPointer, memory)
-  | opcode == 1 = exec $ execOp parameterModes (+) programState
-  | opcode == 2 = exec $ execOp parameterModes (*) programState
-  | opcode == 3 = exec $ input programState
-  | opcode == 4 = exec $ output mode1stParam programState
+exec :: Int -> ProgramState -> ProgramState
+exec inputValue programState@(instructionPointer, memory)
+  | opcode == 1 = execFn $ execOp parameterModes (+) programState
+  | opcode == 2 = execFn $ execOp parameterModes (*) programState
+  | opcode == 3 = execFn $ input inputValue programState
+  | opcode == 4 = execFn $ output mode1stParam programState
+  | opcode == 5 = execFn $ jmpIfTrue parameterModes programState
+  | opcode == 6 = execFn $ jmpIfFalse parameterModes programState
+  | opcode == 7 = execFn $ lessThan parameterModes programState
+  | opcode == 8 = execFn $ equals parameterModes programState
   | otherwise   = programState
   where (mode3rdParam:mode2ndParam:mode1stParam:d:e:[]) = leftPad 5 $ toDigits $ memory V.! instructionPointer
         opcode                                          = (10 * d) + e
         parameterModes                                  = [mode1stParam, mode2ndParam, mode3rdParam]
+        execFn                                          = exec inputValue
 
 execOp :: [Int] -> (Int -> Int -> Int) -> ProgramState -> ProgramState
 execOp (modeA:modeB:_:[]) op (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, op valA valB)])
@@ -46,11 +54,40 @@ execOp (modeA:modeB:_:[]) op (instructionPointer, memory) = (instructionPointer 
                                                                   valB              = resolveMode b modeB memory
                                                                   instructionLength = 4
 
-input :: ProgramState -> ProgramState
-input (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, inputValue)])
-                                     where target            = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
-                                           instructionLength = 2
-                                           inputValue        = 1
+input :: Int -> ProgramState -> ProgramState
+input inputValue (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, inputValue)])
+                                                where target            = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
+                                                      instructionLength = 2
+
+jmpIfTrue :: [Int] -> ProgramState -> ProgramState
+jmpIfTrue modes programState = jmpIf modes (/= 0) programState
+
+jmpIfFalse :: [Int] -> ProgramState -> ProgramState
+jmpIfFalse modes programState = jmpIf modes (== 0) programState
+
+jmpIf :: [Int] -> (Int -> Bool) -> ProgramState -> ProgramState
+jmpIf (modeA:modeB:_:[]) op programState@(instructionPointer, memory)
+  | op valA   = (valB, memory)
+  | otherwise = (instructionPointer + instructionLength, memory)
+  where (a:b:[])          = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
+        valA              = resolveMode a modeA memory
+        valB              = resolveMode b modeB memory
+        instructionLength = 3
+
+lessThan :: [Int] -> ProgramState -> ProgramState
+lessThan modes programState = compareBy modes (<) programState
+
+equals :: [Int] -> ProgramState -> ProgramState
+equals modes programState = compareBy modes (==) programState
+
+compareBy :: [Int] -> (Int -> Int -> Bool) -> ProgramState -> ProgramState
+compareBy (modeA:modeB:_:[]) op(instructionPointer, memory)
+  | op valA valB = (instructionPointer + instructionLength, memory V.// [(c, 1)])
+  | otherwise    = (instructionPointer + instructionLength, memory V.// [(c, 0)])
+  where (a:b:c:[])        = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
+        valA              = resolveMode a modeA memory
+        valB              = resolveMode b modeB memory
+        instructionLength = 4
 
 output :: Int -> ProgramState -> ProgramState
 output mode (instructionPointer, memory) = trace (show $ resolveMode value mode memory) (instructionPointer + instructionLength, memory)

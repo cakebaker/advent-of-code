@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE PatternSynonyms #-}
 
 import System.Environment
@@ -7,7 +6,6 @@ import Text.ParserCombinators.ReadP
 import Data.Char (digitToInt, isDigit)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Debug.Trace
 
 main :: IO ()
 main = do
@@ -20,19 +18,23 @@ main = do
   let intCodes = head $ map (fst . last) $ map (readP_to_S codes) $ lines content
   let program  = V.fromList intCodes
 
-  let !result1 = exec inputValuePuzzle1 (initialInstructionPointer, program)
-  let !result2 = exec inputValuePuzzle2 (initialInstructionPointer, program)
-  return ()
+  let (_, _, result1) = exec inputValuePuzzle1 (initialInstructionPointer, program, [])
+  mapM_ print result1
+
+  let (_, _, result2) = exec inputValuePuzzle2 (initialInstructionPointer, program, [])
+  mapM_ print result2
 
 
-type Memory       = Vector Int
-type ProgramState = (Int, Memory)
+type InstructionPointer = Int
+type Memory             = Vector Int
+type Output             = [Int]
+type ProgramState       = (InstructionPointer, Memory, Output)
 
 pattern PositionMode  = 0
 pattern ImmediateMode = 1
 
 exec :: Int -> ProgramState -> ProgramState
-exec inputValue programState@(instructionPointer, memory)
+exec inputValue programState@(instructionPointer, memory, _)
   | opcode == 1 = execFn $ execOp parameterModes (+) programState
   | opcode == 2 = execFn $ execOp parameterModes (*) programState
   | opcode == 3 = execFn $ input inputValue programState
@@ -48,16 +50,16 @@ exec inputValue programState@(instructionPointer, memory)
         execFn                                          = exec inputValue
 
 execOp :: [Int] -> (Int -> Int -> Int) -> ProgramState -> ProgramState
-execOp (modeA:modeB:_:[]) op (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, op valA valB)])
-                                                            where (a:b:target:[])   = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
-                                                                  valA              = resolveMode a modeA memory
-                                                                  valB              = resolveMode b modeB memory
-                                                                  instructionLength = 4
+execOp (modeA:modeB:_:[]) op (instructionPointer, memory, out) = (instructionPointer + instructionLength, memory V.// [(target, op valA valB)], out)
+                                                                 where (a:b:target:[])   = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
+                                                                       valA              = resolveMode a modeA memory
+                                                                       valB              = resolveMode b modeB memory
+                                                                       instructionLength = 4
 
 input :: Int -> ProgramState -> ProgramState
-input inputValue (instructionPointer, memory) = (instructionPointer + instructionLength, memory V.// [(target, inputValue)])
-                                                where target            = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
-                                                      instructionLength = 2
+input inputValue (instructionPointer, memory, out) = (instructionPointer + instructionLength, memory V.// [(target, inputValue)], out)
+                                                     where target            = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
+                                                           instructionLength = 2
 
 jmpIfTrue :: [Int] -> ProgramState -> ProgramState
 jmpIfTrue modes programState = jmpIf modes (/= 0) programState
@@ -66,9 +68,9 @@ jmpIfFalse :: [Int] -> ProgramState -> ProgramState
 jmpIfFalse modes programState = jmpIf modes (== 0) programState
 
 jmpIf :: [Int] -> (Int -> Bool) -> ProgramState -> ProgramState
-jmpIf (modeA:modeB:_:[]) op programState@(instructionPointer, memory)
-  | op valA   = (valB, memory)
-  | otherwise = (instructionPointer + instructionLength, memory)
+jmpIf (modeA:modeB:_:[]) op programState@(instructionPointer, memory, out)
+  | op valA   = (valB, memory, out)
+  | otherwise = (instructionPointer + instructionLength, memory, out)
   where (a:b:[])          = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
         valA              = resolveMode a modeA memory
         valB              = resolveMode b modeB memory
@@ -81,18 +83,19 @@ equals :: [Int] -> ProgramState -> ProgramState
 equals modes programState = compareBy modes (==) programState
 
 compareBy :: [Int] -> (Int -> Int -> Bool) -> ProgramState -> ProgramState
-compareBy (modeA:modeB:_:[]) op(instructionPointer, memory)
-  | op valA valB = (instructionPointer + instructionLength, memory V.// [(c, 1)])
-  | otherwise    = (instructionPointer + instructionLength, memory V.// [(c, 0)])
+compareBy (modeA:modeB:_:[]) op(instructionPointer, memory, out)
+  | op valA valB = (instructionPointer + instructionLength, memory V.// [(c, 1)], out)
+  | otherwise    = (instructionPointer + instructionLength, memory V.// [(c, 0)], out)
   where (a:b:c:[])        = V.toList $ V.tail $ V.slice instructionPointer instructionLength memory
         valA              = resolveMode a modeA memory
         valB              = resolveMode b modeB memory
         instructionLength = 4
 
 output :: Int -> ProgramState -> ProgramState
-output mode (instructionPointer, memory) = trace (show $ resolveMode value mode memory) (instructionPointer + instructionLength, memory)
-                                           where value             = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
-                                                 instructionLength = 2
+output mode (instructionPointer, memory, out) = (instructionPointer + instructionLength, memory, out ++ [outputValue])
+                                                where param             = V.head $ V.tail $ V.slice instructionPointer instructionLength memory
+                                                      outputValue       = resolveMode param mode memory
+                                                      instructionLength = 2
 
 resolveMode :: Int -> Int -> Memory -> Int
 resolveMode x PositionMode memory = memory V.! x

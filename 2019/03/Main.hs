@@ -12,16 +12,28 @@ main = do
 
   let wires = map (fst . last) $ map (readP_to_S wire) $ lines content
 
-  let centralPort = (0,0)
   let wireA = path Set.empty centralPort $ wires !! 0
   let wireB = path Set.empty centralPort $ wires !! 1
   
-  let result1 = Set.findMin $ Set.map manhattanDistance $ Set.filter (/= centralPort) $ Set.intersection wireA wireB
+  let intersections = Set.filter (/= centralPort) $ Set.intersection wireA wireB
+
+  let result1 = Set.findMin $ Set.map manhattanDistance intersections
   putStrLn $ "Result of puzzle 1: " ++ show result1
+
+  let result2 = fewestStepsToIntersection (Set.toList intersections) (wires !! 0) (wires !! 1)
+  putStrLn $ "Result of puzzle 2: " ++ show result2
 
 
 data Direction = Up Int | Down Int | Left Int | Right Int deriving (Show)
 type Position  = (Int, Int)
+
+centralPort :: Position
+centralPort = (0,0)
+
+fewestStepsToIntersection :: [Position] -> [Direction] -> [Direction] -> Int
+fewestStepsToIntersection intersections directionsA directionsB = minimum $ zipWith (+) stepsA stepsB
+                                                                  where stepsA = map (\intersection -> pathLength centralPort intersection directionsA) intersections
+                                                                        stepsB = map (\intersection -> pathLength centralPort intersection directionsB) intersections
 
 manhattanDistance :: Position -> Int
 manhattanDistance (x,y) = abs x + abs y
@@ -32,6 +44,13 @@ path currentPath position (direction:directions) = path newPath nextPosition dir
                                                    where nextPosition     = last visitedPositions
                                                          newPath          = Set.union currentPath $ Set.fromList visitedPositions
                                                          visitedPositions = positions position direction
+
+pathLength :: Position -> Position -> [Direction] -> Int
+pathLength startPosition endPosition (direction:directions)
+  | elem endPosition visitedPositions = length $ takeWhile (/= endPosition) visitedPositions
+  | otherwise                         = (length visitedPositions - 1) + pathLength nextPosition endPosition directions
+  where visitedPositions = positions startPosition direction
+        nextPosition     = last visitedPositions
 
 positions :: Position -> Direction -> [Position]
 positions (x,y) (Right steps) = [(a,y)      | a <- [x..x+steps]]

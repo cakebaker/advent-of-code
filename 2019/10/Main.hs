@@ -1,5 +1,5 @@
 import System.Environment
-import Data.List (nub, partition)
+import Data.List (nub, partition, sortOn)
 
 main :: IO ()
 main = do
@@ -8,7 +8,7 @@ main = do
 
   let positions = parseAsteroidPositions 0 $ lines content
   
-  let result1 = maximum $ countVisibleAsteroids positions positions
+  let (locationMonitoringStation, result1) = last $ sortOn snd $ countVisibleAsteroids positions positions
   putStrLn $ "Result of puzzle 1: " ++ show result1
 
 
@@ -17,9 +17,9 @@ type Position = (Int, Int)
 asteroid :: Char
 asteroid = '#'
 
-countVisibleAsteroids :: [Position] -> [Position] -> [Int]
+countVisibleAsteroids :: [Position] -> [Position] -> [(Position, Int)]
 countVisibleAsteroids [] _ = []
-countVisibleAsteroids (pos@(x,y):positions) allPositions = (visibleAsteroids:countVisibleAsteroids positions allPositions)
+countVisibleAsteroids (pos@(x,y):positions) allPositions = ((pos, visibleAsteroids):countVisibleAsteroids positions allPositions)
                                                            where positionsWithoutCurrent     = filter (/= pos) allPositions
                                                                  (onSameAxis, notOnSameAxis) = partition (isOnSameAxis pos) positionsWithoutCurrent
                                                                  visibleAsteroids            = countVisibleOnSameAxis pos onSameAxis + countVisibleNotOnSameAxis pos notOnSameAxis

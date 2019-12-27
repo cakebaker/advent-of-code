@@ -16,16 +16,13 @@ main = do
 
 phase :: [[Int]] -> [Int] -> [Int]
 phase [] _ = []
-phase (pattern:patterns) numbers = (onesDigit:phase patterns numbers)
-                                   where sum       = foldl1 (+) $ zipWith (*) numbers pattern
-                                         onesDigit = mod (abs sum) 10
+phase (pattern:patterns) numbers = (onesDigit:phase patterns (tail numbers))
+                                   where onesDigit = (abs $ sum $ zipWith (*) numbers pattern) `mod` 10
 
 createPattern :: Int -> [Int]
-createPattern multiplier = tail $ cycle $ first ++ second ++ third ++ fourth
-                           where first  = replicate multiplier 0
-                                 second = replicate multiplier 1
-                                 third  = replicate multiplier 0
-                                 fourth = replicate multiplier (-1)
+createPattern multiplier = dropWhile (== 0) $ cycle pattern
+                           where basePattern = [0, 1, 0, -1]
+                                 pattern     = concatMap (replicate multiplier) basePattern
 
 toString :: [Int] -> String
-toString xs = foldl1 (++) $ map show xs
+toString xs = concatMap show xs
